@@ -1,6 +1,6 @@
-# Architecture Study
+# Study Log
 
-Architecture를 공부하는 공간
+스터디 기록을 남깁니다.
 
 ## Contents
 
