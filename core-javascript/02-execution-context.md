@@ -55,10 +55,19 @@
     - 브라우저 : `window`
     - Node.js : `global`
 
+## LexicalEnvironment
+
+- 최초 실행 시 `VariableEnvironment`를 그대로 복사해서 `LexicalEnvironment` 생성
+- 코드가 실행되는 동안 변경 사항은 `LexicalEnvironment`에만 반영됨
+
 ### environmentRecord와 호이스팅(hoisting)
 
 - `environmentRecord`에는 매개변수, 함수, `var` 변수 등 식별자 정보가 저장됨
 - JavaScript engine은 **코드를 실행하기 전에 context 내부 코드를 순서대로 확인**하며 식별자들을 수집해서 `environmentRecord`에 저장
+    - 변수 : 식별자만 저장
+      - `var` : 식별자를 저장하면서 `undefined`로 초기화하므로, 초기화 구문 이전에도 접근 가능 (`undefined` 반환)
+      - `let`, `const` : 식별자를 저장하고 초기화 구문을 실행하기 전까지는 'uninitialized' 상태이므로 접근 불가 (TDZ 형성)
+    - 함수 선언 : 함수 이름으로 된 식별자를 저장하고, 그 식별자를 함수 표현식으로 초기화
 - 즉, JavaScript engine이 **식별자들을 최상단으로 끌어올린 다음에 코드를 실행**하는 것 처럼 동작함 -> "**호이스팅(hoisting)**"
     - 실제로 식별자가 끌어올려지는 것은 아님
     - 동작의 이해를 돕기 위해 사용하는 가상의 개념
@@ -136,7 +145,7 @@
         function a() {
             /* environmentRecord에 저장된 정보 */
             var b;
-            // `function b() {}` 함수 선언은 변수에 함수 표현식을 할당한 것처럼 동적
+            // `function b() {}` 함수 선언은 변수에 함수 표현식을 할당한 것처럼 동작
             var b = function b () { }
 
             // ...
@@ -163,8 +172,3 @@
         1. 함수 식별자 `b`가 변수 식별자 `b`보다 나중에 선언되었으므로, `(1)`에서는 함수가 출력됨
         2. `(2)`는 직전에 `b` 식별자의 값을 `"bbb"`로 변경했으므로 `bbb`가 출력됨
         3. `(3)`은 이전에 `b` 식별자의 값이 변경되지 않았으므로 동일하게 `bbb`가 출력됨
-
-## LexicalEnvironment
-
-- 최초 실행 시 `VariableEnvironment`를 그대로 복사해서 `LexicalEnvironment` 생성
-- 코드가 실행되는 동안 변경 사항은 `LexicalEnvironment`에만 반영됨
