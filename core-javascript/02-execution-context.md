@@ -254,3 +254,117 @@
         - namespace
         - Module pattern
         - Sandbox pattern
+
+## 번외: VariableEnvironment는 왜 필요할까?
+
+- `VariableEnvironment`는 현재 컨텍스트의 환경 정보들을 저장하고 snapshot을 생성하여 함수 실행 중에도 값이 변하지 않는다고 설명한다.
+- 그리고 함수가 실행되는 동안에는 주로 `LexicalEnvironment`가 사용된다고 한다.
+- `VariableEnvironment`는 거의 사용되지 않는 것 처럼 보이는데 왜 필요한 것일까?
+
+### ES3 와 ES6+ 에서 실행 Context의 차이
+
+- ES3 에서는 함수 호출 시 생성되는 실행 context에서 `VariableObject`(변수 객체)라고 부르는 곳에 아래 정보를 저장한다.
+    - `arguments` 객체
+    - 지역 변수 (값을 `undefined`로 초기화 해 둔 상태)
+    - this binding (`this` 참조 객체 저장)
+    - scope 정보
+- ES6+ 에서는 `VariableObject` 하나만 사용하는 방식에서 `VariableEnvironment`와 `LexicalEnvironment` 두 가지 환경 정보를 분리해서 저장한다.
+    - 각 환경에는 두 가지 정보가 저장된다.
+    - Outer Environment Reference : 상위 scope의 `LexicalEnvironment` 참조 저장 (Lexical Nesting Structure)
+    - Environment Records : 변수, 함수 식별자 저장
+        - Declarative Environment Records : 일반적인 변수, 함수, `this` binding 저장
+        - Object Environment Records : `with`, `catch`문 안에서 선언한 변수, 함수 저장
+
+### 실행 Context를 `VariableEnvironment`와 `LexicalEnvironment`로 구분하는 이유
+
+1. `var` 변수와 `let`, `const` 변수의 동작 차이
+    - `var` 변수는 **functional scope**를 갖기 때문에 함수 내부의 다른 block scope에서도 동일한 환경 record로 접근하면 된다.
+    - `VariableEnvironment`는 이렇게 함수 안에서 단일 환경 record를 제공하는 목적으로 사용된다.
+    - 하지만, `let`과 `const`는 **block scope**를 갖기 때문에 **함수 내부의 block마다 독립적인 환경 record에 저장되어야 한다.**
+    - `LexicalEnvironment`는 이렇게 **실행 context 안에서 block 마다 여러 개의 환경 record를 제공**하기 위해 사용된다.
+2. `var` 변수와 `let`, `const` 변수의 생성 과정 차이
+    - 변수는 3가지 단계를 거쳐 생성된다.
+        1. 선언 단계 (Declaration phase) : 변수를 환경 정보에 등록
+        2. 초기화 단계 (Initialization phase) : `LexicalEnvironment`에 등록된 변수에 메모리를 할당하고 `undefined`로 초기화 (Lexical Binding)
+        3. 할당 단계 (Assignment phase) : 변수에 값 할당 (`undefined` 또는 그 외에 다른 값)
+    - `var` 변수는 1번과 2번 단계가 동시에 일어난다.
+        - 먼저 `VariableEnvironment`에 식별자가 저장된다.
+        - `VariableEnvironment`를 사용해서 함수 레벨의 `LexicalEnvironment`를 생성할 때(instantiate) `var` 변수의 메모리 할당 및 `undefined` 초기화가 일어난다.
+        - 그래서, 변수 선언문 이전에 접근해도 `undefined`를 반환할 뿐 error가 발생하지 않는다.
+    - `let`과 `const` 변수는 1번과 2번 단계가 개별적으로 일어난다.
+        - `LexicalEnvironment` 생성 시 식별자를 저장한다. 식별자를 등록했지만 아직 메모리를 할당하지 않은 상태이다.
+        - 변수 선언문이 실행되는 시점에 메모리 할당 및 `undefined` 초기화가 일어난다.
+        - 그래서, 변수 선언문 이전에 접근하면 error가 발생한다. => **TDZ(Temporal Dead Zone) 형성**
+
+### 결론
+
+- `VariableEnvironment`와 `LexicalEnvironment`를 구분하는 이유는 ES6+ 에서 새롭게 추가된 `let`과 `const` 변수의 동작 방식을 지원하면서도 이전에 사용하던 `var` 변수와 함수 선언문의 동작에 대해 호환성을 제공하기 위함이다.
+    - `VariableEnvironment` : functional scope를 갖는 `var` 변수를 관리하는 목적
+    - `LexicalEnvironment` : block scope를 갖는 `let`과 `const` 변수, 함수 선언 등을 관리하는 목적
+- `let`과 `const` 변수는 `var` 변수가 functional scope를 갖는 것에서 비롯된 문제들을 해결하기 위해 도입되었다. 따라서, `VariableEnvironment`와 `LexicalEnvironment`는 이 문제들을 해결하기 위한 구체적인 방법으로 볼 수 있겠다.
+- JavaScript는 `VariableEnvironment`와 `LexicalEnvironment`를 분리해서 사용하여 다양한 scope(functional 및 block scope)를 지원할 수 있게 되었다.
+- `LexicalEnvironment`에서 `var` 변수를 초기화한다는 내용도 있어서, 대부분의 일반적인 상황에서 동작하는 방식이라고 이해하면 될 것 같다.
+- 이 동작 방식은 block scope가 도입된 ES6+ 모던 JavaScript의 동작이다. Block scope 이전에는 다르게 동작할 수 있다.
+
+### 참고
+
+- [Velog | VariableEnvironment는 왜 필요할까](https://velog.io/@bapbodanbbang/Variable-Environment%EB%8A%94-%EC%99%9C-%ED%95%84%EC%9A%94%ED%95%A0%EA%B9%8C)
+- [[JavaScript] ES6의 Execution Context(실행 컨텍스트)의 동작 방식과 Lexical Nesting Structure(Scope chain)](https://m.blog.naver.com/dlaxodud2388/222655214381)
+- [Variable Environment vs. Lexical Environment](https://seholee.com/blog/varaible-environment-vs-lexical-environment/)
+
+
+## [Claude Q&A](https://claude.ai/share/4449c15e-c6e5-4f8e-8de1-c47f60b658dd)
+
+### 실행 Context의 생성 시점
+
+- 실행 context는 **함수 호출 시점**에 생성된다.
+    ```javascript
+    function myFunction() {
+        console.log('함수 실행');
+        var x = 10;
+    }
+
+    // 이 시점에서는 실행 컨텍스트 생성 안됨 (함수만 정의)
+    console.log('함수 호출 전');
+
+    // 이 시점에서 실행 컨텍스트 생성!
+    myFunction(); 
+
+    // 함수 실행 완료 후 실행 컨텍스트 소멸
+    ```
+- 실행 context 생성 단계
+    1. 생성 단계 (Creation phase)
+        - `VariableEnvironment` 및 `LexicalEnvironment` 설정
+        - `this` binding 결정
+        - Hoisting 처리
+    2. 실행 단계 (Execution phase)
+        - 실제 코드 실행
+        - 변수에 값 할당
+
+### `outerEnvironmentReference` 설정 시점 (Scope chain 결정 시점, lexical scoping)
+
+- **결정 시점** : 함수 정의 시점 (함수를 정의하는 코드 실행)
+    - 함수의 `[[Environment]]` 슬롯에 현재 scope의 `LexicalEnvironment` 참조 저장
+- **설정 시점** : 함수 호출 시점 (함수 자체를 실행) 
+    - 함수의 `[[Environment]]`에 저장된 참조를 실행 context의 `outerEnvironmentReference`에 저장
+
+### "VariableEnvironment에 담기는 내용은 LexicalEnvironment와 같지만 최초 실행 시의 스냅샷을 유지한다는 점이 다릅니다."
+
+- 이 문장만 보면 `VariableEnvironment`에 저장된 변수(식별자)의 값은 실행 context 생성 이후 바뀌지 않는다는 것 처럼 이해된다.
+- 하지만, `VariableEnvironment`가 저장하고 있는 변수의 값이 바뀌지 않는다는 의미가 아니라 `VariableEnvironment`에 저장된 객체 자체가 바뀌지 않는다는 의미이다.
+- 함수 내부에서 block을 실행할 때, 함수 실행 context의 `LexicalEnvironment`는 block의 `LexicalEnvironment`로 교체되어 실행된다.
+- [Inflearn | '실행 컨텍스트 안의 VariableEnvironment 를 존재 이유가 궁금합니다.' 질문의 답변](https://www.inflearn.com/community/questions/359757?focusComment=151373)에 따르면,
+    - 내부 block scope의 실행이 종료되면 원래 상태의 `LexicalEnvironment`로 복구할 때 `VariableEnvironment`가 사용된다고 한다.
+    - Claude 설명과 합쳐 보면,
+        1. 함수 scope는 `VariableEnvironment`와 `LexicalEnvironment`를 하나씩 가지고 있다.
+        2. Block scope는 독립적인 `LexicalEnvironment`를 갖는다.
+        3. Block이 실행될 때, 함수의 `LexicalEnvironment`에 할당된 객체는 block scope의 `LexicalEnvironment`로 교체된다.
+        4. 함수 내부에서 block 내부의 코드를 실행할 때, 해당 block의 `LexicalEnvironment`를 가지고 코드를 실행하게 된다.
+        5. Block 실행이 종료되면 함수의 `LexicalEnvironment`를 block 실행 이전으로 돌려야하는데, 이 때 `VariableEnvironment`를 사용한다. 
+            - `VariableEnvironment`는 함수 실행 context 생성 시 만들어진 뒤 변경되지 않으므로 함수의 원래 환경 정보를 가지고 있다.
+
+### "실행 컨텍스트를 생성할 때 VariableEnvironment에 정보를 먼저 담은 다음, 이를 그대로 복사해서 LexicalEnvironment를 만들고, 이후에는 LexicalEnvironment를 주로 활용하게 됩니다."
+
+- ES6+ 부터 `var` 변수도 `LexicalEnvironment`를 사용해서 찾도록 매커니즘이 변경되었다.
+- 실행 context에서 식별자를 해석하고 참조하는 주체가 `LexicalEnvironment`인 것
+- `let`이나 `const` 같은 변수를 많이 사용하기 때문이 아니다.
