@@ -259,7 +259,7 @@
 
 - `VariableEnvironment`는 현재 컨텍스트의 환경 정보들을 저장하고 snapshot을 생성하여 함수 실행 중에도 값이 변하지 않는다고 설명한다.
 - 그리고 함수가 실행되는 동안에는 주로 `LexicalEnvironment`가 사용된다고 한다.
-- `VariableEnvironment`는 거의 사용되지 않는 것 처럼 보이는데 왜 필요한 것일까?
+- `VariableEnvironment`는 값이 변하지 않는다고 하니까 거의 사용하지 않을 것 처럼 보이는데, 왜 필요한 것일까?
 
 ### ES3 와 ES6+ 에서 실행 Context의 차이
 
