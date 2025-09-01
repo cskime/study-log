@@ -124,6 +124,22 @@
 
 ### 생성자 함수에서 this
 
+```javascript
+var Cat = function (name, age) {
+    this.bark = "야옹";
+    this.name = name;
+    this.age = age;
+};
+
+var choco = new Cat("초코", 7);
+var nabi = new Cat("나비", 3);
+console.log(choco, nabi);
+
+// 출력 결과
+// { bark: "야옹", name: "초코", age: 7 }
+// { bark: "야옹", name: "나비", age: 3 }
+```
+
 - 함수를 `new` keyword와 함께 호출하면 생성자 함수로 동작
 - 생성자 함수는 **생성자 함수의 `prototype` property를 참조하는 `__proto__` property를 가진 객체**를 만들고 `this`에 binding
 - 생성자 함수 내부에서 `this`를 통해 이 객체 instance에 접근해서 property 및 method들을 추가
