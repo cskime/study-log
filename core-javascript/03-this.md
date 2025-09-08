@@ -144,3 +144,90 @@ console.log(choco, nabi);
 - 생성자 함수는 **생성자 함수의 `prototype` property를 참조하는 `__proto__` property를 가진 객체**를 만들고 `this`에 binding
 - 생성자 함수 내부에서 `this`를 통해 이 객체 instance에 접근해서 property 및 method들을 추가
 - 생성자 함수는 `return`문이 없으면 암묵적으로 `this`를 반환 => **객체를 생성**해 주는 함수로서 동작
+
+## Explicit `this` binding
+
+### `call()`과 `apply()` method
+
+- `Function.prototype.call(thisArg, [arg1, arg2, ...])`
+- `Function.prototype.apply(thisArg, args)`
+- **함수의 `this`에 `thisArg`를 binding**해서 즉시 실행하는 동작 방식은 같고, 전달인자 전달 방식에만 차이가 있음
+- 사용 예시
+    - 유사 배열 객체를 일반 배열로 변환
+        ```javascript
+        const nodeList = document.querySelectorAll("div");
+        const nodeArray = Array.prototype.slice.call(nodeList); // `nodeList`가 배열이었다면 `nodeList.slice()`와 같음
+        nodeArray.forEach(console.log);
+        ```
+        - `arr.slice(start?, end?)`는 `this`로 설정된 `arr`에 대해 subarr를 반환하는 method
+        - `Array.prototype.slice.call(nodeList)`는 `slice()` method의 `this`를 `nodeList`로 설정해서 subarr를 만드는 것
+        - 단, `call`, `apply`를 사용하는 방식은 method의 `this`를 호출 객체로 binding하는 의도와 맞지 않음
+        - ES6 부터는 **유사 배열 객체를 일반 배열로 변환하는 용도로 사용할 `Array.from()` method 도입**
+            ```javascript
+            const obj = { 0: "a", 1: "b", 2: "c", length: 3 };
+            const arr = Array.from(obj);
+            console.log(arr); // ["a", "b", "c"]
+            ```
+    - 생성자 함수에서 중복된 property를 가진 객체를 만드는 다른 생성자 함수 호출
+        ```javascript
+        function Person(name, gender) {
+            this.name = name;
+            this.gender = gender;
+        }
+
+        function Student(name, gender, school) {
+            Person.call(this, name, gender); // `Student` 생성자 함수가 만드는 객체(`this`)에 property 초기화
+            this.school = school;
+        }
+        ```
+    - 여러 argument를 하나의 배열로 전달 (`apply()` 활용)
+        ```javascript
+        const numbers = [1, 2, 3];
+        const max = Math.max.apply(null, numbers); // `Math.max(...numbers)`와 같음
+        console.log(max); // 3
+        ```
+
+### `bind()` method
+
+- `bind(thisArg, [arg1, arg2, ...])` : 함수의 `this`를 `thisArg`로 binding한 **새로운 함수 반환**
+    ```javascript
+    function func(a, b, c) {
+        console.log(this, a, b, c);
+    }
+    func(1, 2, 3); // Window{...} 1 2 3
+    //                -----------
+    //                함수 호출이므로 `this`는 전역 객체
+
+    const boundFunc = func.bind({ x: 1 });
+    boundFunc(1, 2, 3); // { x: 1 } 1 2 3
+    //                     --------
+    //                     `this`는 `bind(thisArg)`에서 binding한 `thisArg` 객체
+    ```
+- `call()`과 `apply()`는 `this`를 binding한 뒤 즉시 실행하지만, `bind()`는 함수만 생성
+- `bind()`로 만든 함수의 `name` property의 값은 `bound ` prefix가 추가되어 구분 가능
+    ```javascript
+    function func(a, b, c) {
+        console.log(this, a, b, c);
+    }
+    const boundFunc = func.bind({ x: 1 }, 1, 2, 3);
+    console.log(func.name); // func
+    console.log(boundFunc.name); // bound func
+    ```
+- 중첩 함수에서 `this` 누락 문제를 해결할 때, 변수를 사용해서 우회하는 대신 `bind()`를 사용해서 선언 당시 환경의 `this`로 binding된 함수를 만들 수 있음
+    ```javascript
+    var obj = {
+        outer: function () {
+            console.log(this); // `obj` 함수 출력
+            var inner = function () {
+                console.log(this); // `obj` 함수 출력
+            }.bind(this);
+            inner();
+        }
+    };
+    obj.outer(); 
+    ```
+
+### Callback 함수에서 `this`
+
+- Callback 함수를 받는 method들 중 일부는 callback 함수의 `this`에 binding할 `thisArg`를 설정할 수 있음
+- `forEach`, `map`, `filter`, `some`, `every`, `find`, `findIndex`, `flatMap`, `from` 등
