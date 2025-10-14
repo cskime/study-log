@@ -76,3 +76,40 @@
     - `typeof` 연산자는 `null` 값에 대해 `object`를 반환하는 버그가 있음
     - `==` 연산자는 `undefined`와 `null`을 같다고 평가하므로, 피연산자가 `null`이 아닐 수 있음
     - **`===` 연산자는 정확히 `null`인 경우에만 같다고 평가**
+
+## 02. Execution Context
+
+- JavaScript는 함수 호출 시 '실행 컨텍스트'라는 개념적인 객체를 사용해서 함수를 실행할 때 필요한 환경 정보를 저장하고 사용
+- 함수가 호출되는 시점에 실행 컨텍스트가 생성되고 `LexicalEnvironment`에 식별자 정보와 외부 환경 정보 저장
+- `environmentRecord` : 매개변수, 변수, 함수 등 식별자 정보 저장
+    - JavaScript engine은 코드를 실행하기 전에 먼저 식별자들을 수집해서 `environmentRecord`에 저장
+    - 코드가 실행될 때는 변수, 함수가 코드의 맨 위로 끌어올려지는 것 처럼 동작함 -> **호이스팅(hoisting)**
+    - 변수
+        - 변수는 선언문만 호이스팅 되고, 값 할당은 실제 코드가 실행될 때 이루어짐
+        - `var` : 식별자를 저장할 때 동시에 `undefined`로 초기화하므로, 초기화 구문 이전에 접근 가능
+        - `let`, `const` : 먼저 '초기화되지 않은 상태'로 식별자를 저장하므로, 초기화 구문 이전에 접근하면 error 발생 -> **TDZ(Temporary Dead Zone)**
+    - 함수
+        - 함수는 변수에 함수 표현식이 할당되는 방식으로 호이스팅이 일어남
+        - 함수 선언문은 식별자 호이스팅과 동시에 함수 표현식 형태로 초기화됨
+        - 함수 표현식은 식별자만 호이스팅되고 초기화는 실제 초기화 구문 실행 시 동작 -> 일반 변수와 동일
+- `outerEnvironmentReference` : 함수가 선언된 위치에서의 `LexicalEnvironment` 참조
+    - **함수 코드가 실행되는 시점에 결정**되고, **함수가 실제로 호출되는 시점에 설정**됨
+    - `outerEnvironmentReference`를 통해 `LexicalEnvironment`들이 연결되는 scope chain 형성
+    - 변수, 함수에 접근 시 `LexicalEnvironment`부터 시작해서 scope chain을 따라 전역 context까지 **해당 식별자가 존재하는 가장 가까운 `LexicalEnvironment`를 탐색**
+
+### VariableEnvironment의 필요성
+
+- ES3 에서는 실행 컨텍스트가 `VariableObject` 객체에 정보를 저장함 (`arguments`, 지역 변수, `this`, scope 정보 등)
+- ES6+ 에서 `VariableEnvironment`와 `LexicalEnvironment` 두 가지로 분리해서 사용
+    - `var` 변수는 함수 scope를 갖기 때문에 함수 내부의 block이 함수와 동일한 environment를 사용해도 됨 -> `VariableEnvironment` 사용
+    - `let`, `const` 변수는 block scope를 갖기 때문에 내부 block이 독립적인 environment를 가져야 함 -> `LexicalEnvironment` 사용
+    - `VariableEnvironment`는 함수 안에서 단일 환경 record를 제공하기 위해 사용
+    - `LexicalEnvironment`는 block 마다 독립적인 여러 개의 환경 record를 제공하기 위해 사용
+- `var` 변수와 `let`, `const` 변수의 생성 과정 비교
+    - 변수는 선언, 초기화, 할당 3가지 단계를 거쳐 생성됨
+    - `var` 변수는 `VariableEnvironment`에 식별자가 먼저 저장되고(선언) `LexicalEnvironment`를 생성할 때 값이 초기화됨
+    - `let`,` const` 변수는 처음부터 `LexicalEnvironment`에 초기화되지 않은 상태로 식별자를 저장하고, 변수 선언문이 실행될 때 `undefined`로 초기화됨
+- 결론
+    - `LexicalEnvironment`는 `let`, `const` 등 새로운 변수의 block scope 동작을 지원하기 위해 사용된다.
+    - `VariableEnvironment`는 `var` 변수에 대한 호환성을 지원하기 위해 사용되었다.
+    - 하지만, ES6+ 이후부터는 `var` 변수도 `LexicalEnvironment`를 사용하도록 변경되었고 `VariableEnvironment`는 거의 고려하지 않아도 될 것 같다.
