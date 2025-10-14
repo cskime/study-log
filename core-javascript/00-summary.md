@@ -146,3 +146,15 @@
 - 비동기 코드와 callback
     - 비동기 코드 작성 시, 이전 작업에 의존성이 있는 비동기 작업이 여러 번 중첩되면서 callback 지옥을 만듦
     - `Promise`, generator(`function *`, `yield`), `async`/`await` 등의 방법으로 해결
+
+## 05. Closure
+
+- Closure : 함수와 함수가 선언될 당시의 lexical environment의 조합
+    - 함수가 선언될 당시의 lexical environment : `outerEnvironmentReference`가 참조하는 `LexcialEnvironment`
+    - 즉, closure는 **내부 함수가 외부의 변수를 참조하는 상황에서만 발생**하는 현상
+- 외부 함수에 선언된 지역 변수를 참조하는 내부 함수를 외부로 전달할 때 발생
+    - 내부 함수를 외부로 전달하는 방법 : `return`문 반환, 다른 함수의 callback으로 전달 등
+    - 내부 함수의 context가 `outerEnvironmentReference`를 통해 외부 함수의 지역 변수를 참조함
+    - 외부 함수의 실행이 종료되더라도, 외부로 전달된 내부 함수가 외부 함수의 지역 변수를 참조하므로 GC가 발생하지 않고 메모리를 유지할 수 있음
+    - 즉, **이미 종료된 함수의 지역 변수에 함수 종료 이후에도 계속 접근할 수 있음**
+- Callback 함수 내부에서 외부 데이터 사용, access control 구현, 부분 적용 함수 구현 등에 활용
