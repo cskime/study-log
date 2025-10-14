@@ -17,10 +17,6 @@
 - Prototype
 - Class
 
-### Summary
-
--
-
 ### Log
 
 |     | Name |    Date    |
