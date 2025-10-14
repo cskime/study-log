@@ -113,3 +113,25 @@
     - `LexicalEnvironment`는 `let`, `const` 등 새로운 변수의 block scope 동작을 지원하기 위해 사용된다.
     - `VariableEnvironment`는 `var` 변수에 대한 호환성을 지원하기 위해 사용되었다.
     - 하지만, ES6+ 이후부터는 `var` 변수도 `LexicalEnvironment`를 사용하도록 변경되었고 `VariableEnvironment`는 거의 고려하지 않아도 될 것 같다.
+
+## 03. this
+
+- 전역 공간에서 `this` : 전역 객체 (브라우저는 `window`, Node.js는 `global` 또는 `globalThis`)
+- 함수 내부에서 `this` : 호출 주체
+    - 함수 단독 호출 : `this`에 전역 객체 binding
+    - Method로 호출 : `this`에 호출한 객체 binding
+- Calback 함수에서 `this` : 제어권을 넘겨준 함수가 설정하는 객체
+    - `addEventListener()` : event가 발생한 객체로 binding
+    - `forEach()` 등 배열 고차 함수 : 해당 배열로 binding
+    - `setTimeout()` : 별도로 binding 하지 않음 (전역 객체)
+- 생성자 함수에서 `this` : 생성자 함수의 `prototype`을 참조하는 `__proto__` property를 가진 객체를 생성한 뒤 binding
+- `this`와 화살표 함수
+    - 중첩 함수 내부에서 `this`는 중첩 함수를 단독으로 호출할 때 전역 객체가 됨
+    - 하지만, 상위 함수의 `this`를 그대로 따라가는 것이 더 자연스러움
+    - ES6 에서는 이 문제를 화살표 함수로 해결
+    - 화살표 함수는 자체적인 `this` binding을 갖지 않으므로 scope chain을 따라 상위 함수의 `this` binding을 탐색
+    - 화살표 함수를 사용하면 중첩 함수가 상위 함수의 `this`를 `self` 등의 변수로 받아서 활용하는 기법을 사용하지 않아도 됨
+- 명시적 `this` binding
+    - `call(thisArg[, arg1, arg2, ...])`/`apply(thisArg[, args])` : `this` binding을 명시적으로 설정해서 호출
+    - `bind(thisArg[, arg1, arg2, ...])` : `this` binding을 명시적으로 설정한 새로운 함수 생성
+    - Callback 함수를 받는 일부 함수들은 callback 함수의 `this`를 설정할 수 있는 `thisArg` argument 제공 (e.g. `forEach`, `map`, ...)
