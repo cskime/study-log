@@ -135,3 +135,14 @@
     - `call(thisArg[, arg1, arg2, ...])`/`apply(thisArg[, args])` : `this` binding을 명시적으로 설정해서 호출
     - `bind(thisArg[, arg1, arg2, ...])` : `this` binding을 명시적으로 설정한 새로운 함수 생성
     - Callback 함수를 받는 일부 함수들은 callback 함수의 `this`를 설정할 수 있는 `thisArg` argument 제공 (e.g. `forEach`, `map`, ...)
+
+## 04. Callback
+
+- Callback 함수 : argument를 통해 다른 함수로 전달되는 함수
+- Callback 함수는 다른 함수에게 제어권을 함께 위임
+    - Callback을 받는 함수는 callback의 호출 시점, 전달 인자, `this` binding 등을 결정
+    - Callback 함수가 객체 method 이더라도, 호출 제어권을 내부 함수가 갖기 때문에 `this`가 객체가 아닐 수 있음
+    - `bind()`를 사용해서 `this`가 원하는 객체로 binding 된 callback을 전달할 수 있음
+- 비동기 코드와 callback
+    - 비동기 코드 작성 시, 이전 작업에 의존성이 있는 비동기 작업이 여러 번 중첩되면서 callback 지옥을 만듦
+    - `Promise`, generator(`function *`, `yield`), `async`/`await` 등의 방법으로 해결
