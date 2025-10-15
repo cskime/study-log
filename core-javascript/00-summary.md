@@ -158,3 +158,34 @@
     - 외부 함수의 실행이 종료되더라도, 외부로 전달된 내부 함수가 외부 함수의 지역 변수를 참조하므로 GC가 발생하지 않고 메모리를 유지할 수 있음
     - 즉, **이미 종료된 함수의 지역 변수에 함수 종료 이후에도 계속 접근할 수 있음**
 - Callback 함수 내부에서 외부 데이터 사용, access control 구현, 부분 적용 함수 구현 등에 활용
+
+## 06. Prototype
+
+- Prototype : 생성자 함수로 만든 객체(instance)들이 공통으로 접근할 수 있는 객체
+- 생성자 함수가 만든 객체는 생성자 함수의 `prototype` 객체를 참조하는 `[[prototype]]` slot (또는 `__proto__` property)를 가짐
+- 즉, 생성자 함수로 만든 객체는 `__proto__` property를 통해 생성자 함수의 `prototype` 객체에 정의된 property 및 method에 접근 가능 
+    <br/><img src="./images/06-prototype-01.png" width="500" /><br/>
+    ```javascript
+    function Person(name) {
+        this._name = name;
+    }
+    Person.prototype.getName = function () {
+        return this._name;
+    }
+
+    const suzi = new Person("Suzi");
+    suzi.__proto__.getName(); // undefined
+    suzi.getName(); // Suzi (`__proto__` 생략 가능)
+    ```
+- 배열에서 사용하는 method들은 `Array` 생성자 함수의 `prototype`에 정의되어 있는 것을 사용하는 것
+    <br/><img src="./images/06-prototype-02.png" width="400" /><br/>
+- `prototype`에 선언된 가진 `constructor` property는 생성자 함수 자신을 참조 
+- Prototype chain
+    - `prototype`도 객체이므로 `__proto__` property를 가짐
+    - 이 때, 생성자 함수가 만든 객체에서 시작해서 `__proto__` property를 따라 prototype chain이 형성됨
+    - `__proto__` property가 참조하는 `prototype` 객체가 `__proto__` property를 통해 다른 `prototype`과 연결되는 것
+    - 객체는 자신이 가진 property에서 시작하여 prototype chain을 따라 가장 가까운 `prototype`에 선언된 property를 참조
+- `Object.prototype`
+    - 생성자 함수는 객체를 반환
+    - JavaScript의 모든 값은 내부적으로 생성자 함수를 통해 만들어지므로 모든 값의 prototype chain의 최상단에는 `Object.prototype`이 존재
+    - 모든 값에서 `toString()` 함수를 사용할 수 있는 이유 (`Object.prototype.toString()`)
