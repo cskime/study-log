@@ -189,3 +189,100 @@
     - 생성자 함수는 객체를 반환
     - JavaScript의 모든 값은 내부적으로 생성자 함수를 통해 만들어지므로 모든 값의 prototype chain의 최상단에는 `Object.prototype`이 존재
     - 모든 값에서 `toString()` 함수를 사용할 수 있는 이유 (`Object.prototype.toString()`)
+
+## 07. Class
+
+- JavaScript는 prototype 기반 언어이지만 class와 비슷하게 해석될 수 있음
+    ```javascript
+    // Class
+    function Rectangle(width, height) {
+        this.width = width;
+        this.height = height;
+    }
+
+    // Instance(or prototype) method
+    Rectangle.prototype.getArea = function () {
+        return this.width * this.height;
+    }
+
+    // Static method
+    Rectangle.isRectangle = function (instance) {
+        return instance instanceof Rectangle && 
+            instance.width > 0 && 
+            instance.height > 0;
+    }
+
+    // Instance
+    const rect = new Rectangle(3, 4);
+    console.log(rect.getArea()); // ✅ 12
+    console.log(rect.isRectangle(rect)); // ❌ error
+    console.log(Rectangle.isRectangle(rect)); // ✅ true
+    ```
+- Prototype chaining을 활용해서 class 상속과 비슷하게 구현 가능
+    - `Rectangle` class를 상속받는 `Square` class 구현 예시
+        ```javascript
+        // Rectangle을 상속받는 Square 클래스 구현
+        function Square(width) {
+            Rectangle.call(this, width, width);
+        }
+        ```
+        1. `prototype`에 property가 제거된 다른 객체를 할당해서 prototype chain 형성
+            - 객체의 property를 직접 제거하거나
+                ```javascript
+                const rect = new Rectangle();
+                delete rect.width;
+                delete rect.height;
+                Object.freeze(rect);
+
+                Square.prototype = rect;
+                ```
+            - Property가 없는 `Bridge` 객체 사용
+                ```javascript
+                function Bridge() {}
+                Bridge.prototype = Rectangle.prototype;
+                Square.prototype = new Bridge();
+                Object.freeze(Square.prototype);
+                ```
+        2. `Object.create(prototype)`으로 상속 받으려는 다른 `prototype`을 직접 할당
+            ```javascript
+            Square.prototype = Object.create(Rectangle.prototype);
+            Object.freeze(Square.prototype);
+            ```
+    - 이 때, `Square.prototype`이 다른 객체로 바뀌면서 `constructor`가 상위 class를 가리키므로 직접 복구해야 함
+        ```javascript
+        Square.prototype.constructor = Square;
+        ```
+- ES6부터 prototype을 사용하지 않고 class를 만들 수 있는 문법 제공
+    ```javascript
+    class Rectangle {
+        // 생성자 (생성자 함수와 같음)
+        constructor(width, height) {
+            this.width = width;
+            this.height = height;
+        }
+
+        // Instance method
+        getArea() {
+            return this.width * this.height;
+        }
+
+        // Static method
+        static isRectangle(instance) {
+            return instance instanceof Rectangle && 
+                instance.width > 0 && 
+                instance.height > 0;
+        }
+    }
+
+    class Square extends Rectangle {
+        constructor (width) {
+            // `super`로 상위 class 접근
+            super(width, width);
+        }
+
+        // Override
+        getArea() {
+            console.log("Size :", super.getArea());
+        }
+    }
+    ```
